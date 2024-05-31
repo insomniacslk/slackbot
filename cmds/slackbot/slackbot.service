@@ -1,0 +1,17 @@
+# adjust ExecStart path to where your executable and config file are
+# copy to ~/.config/systemd/user
+# systemctl enable --user slackbot
+# systemctl start --user slackbot
+# tail -F <log file, see config.json>
+
+[Unit]
+Description=Start the slackbot bot
+
+[Service]
+ExecStart=/usr/local/bin/slackbot -c /etc/slackbot/config.json
+RemainAfterExit=no
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
