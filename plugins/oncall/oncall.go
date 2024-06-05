@@ -17,9 +17,9 @@ import (
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
 
-	"github.com/insomniacslk/slack-bots/pkg/actions"
-	"github.com/insomniacslk/slack-bots/pkg/credentials"
-	"github.com/insomniacslk/slack-bots/plugins"
+	"github.com/insomniacslk/slackbot/pkg/actions"
+	"github.com/insomniacslk/slackbot/pkg/credentials"
+	"github.com/insomniacslk/slackbot/plugins"
 )
 
 func init() {

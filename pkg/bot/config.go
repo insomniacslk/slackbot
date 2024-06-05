@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/insomniacslk/slack-bots/pkg/credentials"
-	"github.com/insomniacslk/slack-bots/plugins"
+	"github.com/insomniacslk/slackbot/pkg/credentials"
+	"github.com/insomniacslk/slackbot/plugins"
 )
 
 // DefaultCmdPrefix is used when no command prefix is specified in the config

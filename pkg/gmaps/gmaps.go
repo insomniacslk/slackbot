@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/insomniacslk/slack-bots/pkg/location"
+	"github.com/insomniacslk/slackbot/pkg/location"
 	"googlemaps.github.io/maps"
 )
 

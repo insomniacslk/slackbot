@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/insomniacslk/slack-bots/pkg/bot"
-	_ "github.com/insomniacslk/slack-bots/plugins/oncall"
+	"github.com/insomniacslk/slackbot/pkg/bot"
+	_ "github.com/insomniacslk/slackbot/plugins/oncall"
 )
 
 var (

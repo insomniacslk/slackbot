@@ -1,4 +1,4 @@
-module github.com/insomniacslk/slack-bots
+module github.com/insomniacslk/slackbot
 
 go 1.16
 

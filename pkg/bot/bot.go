@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/insomniacslk/slack-bots/pkg/credentials"
+	"github.com/insomniacslk/slackbot/pkg/credentials"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
