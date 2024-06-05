@@ -1,4 +1,4 @@
-## slack-bots
+## slackbot
 
 Customized Slack bot. Implement your own plugins under [`plugins`](plugins/).
 
