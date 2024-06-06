@@ -48,7 +48,7 @@ func (b *Bot) Start() error {
 	b.Log = logger
 
 	b.Log.Printf("Config: %+v", b.Config)
-	api := slack.New(credentials.SlackAPIKey, slack.OptionDebug(b.Config.Debug), slack.OptionLog(b.Log), slack.OptionAppLevelToken(credentials.SlackAppLevelToken))
+	api := slack.New(credentials.SlackBotToken, slack.OptionDebug(b.Config.Debug), slack.OptionLog(b.Log), slack.OptionAppLevelToken(credentials.SlackAppLevelToken))
 	client := socketmode.New(api, socketmode.OptionDebug(b.Config.Debug), socketmode.OptionLog(b.Log))
 	b.Log.Printf("Client created")
 

@@ -3,7 +3,6 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 
 	"github.com/insomniacslk/slackbot/pkg/credentials"
@@ -16,59 +15,47 @@ var DefaultCmdPrefix = "!"
 
 // Config is a configuration object for the bot.
 type Config struct {
-	BotName     string `json:"bot_name"`
-	LogFile     string `json:"logfile"`
-	Debug       bool   `json:"debug"`
+	BotName     string `mapstructure:"bot_name"`
+	LogFile     string `mapstructure:"logfile"`
+	Debug       bool   `mapstructure:"debug"`
 	Credentials struct {
-		PagerDutyAPIKey    string `json:"pagerduty_api_key"`
-		SlackAPIKey        string `json:"slack_api_key"`
-		SlackAppLevelToken string `json:"slack_app_level_token"`
-	} `json:"credentials"`
-	CmdPrefix     string                 `json:"cmdprefix,omitempty"`
-	PluginConfigs map[string]interface{} `json:"plugins"`
+		PagerDutyAPIKey    string `mapstructure:"pagerduty_api_key"`
+		SlackBotToken      string `mapstructure:"slack_bot_token"`
+		SlackAppLevelToken string `mapstructure:"slack_app_level_token"`
+	} `mapstructure:"credentials"`
+	CmdPrefix     string                 `mapstructure:"cmdprefix,omitempty"`
+	PluginConfigs map[string]interface{} `mapstructure:"plugins"`
 
-	Plugins []plugins.Plugin `json:"-"`
+	Plugins []plugins.Plugin `mapstructure:"-"`
 }
 
-// ReadConfig reads a configuration file and returns a Config object, or an
-// error if any.
-func ReadConfig(configFile string) (*Config, error) {
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-	config := Config{}
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, err
-	}
-
+func (c *Config) Validate() error {
 	// if no command prefix is specified, use the default
-	if config.CmdPrefix == "" {
-		config.CmdPrefix = DefaultCmdPrefix
+	if c.CmdPrefix == "" {
+		c.CmdPrefix = DefaultCmdPrefix
 	}
-
 	// propagate the API keys to the credentials package, so other plugins can
 	// use them.
-	credentials.SlackAPIKey = config.Credentials.SlackAPIKey
-	credentials.SlackAppLevelToken = config.Credentials.SlackAppLevelToken
-	credentials.PagerDutyAPIKey = config.Credentials.PagerDutyAPIKey
+	credentials.SlackBotToken = c.Credentials.SlackBotToken
+	credentials.SlackAppLevelToken = c.Credentials.SlackAppLevelToken
+	credentials.PagerDutyAPIKey = c.Credentials.PagerDutyAPIKey
 
 	// now parse each plugin
-	for name, pconf := range config.PluginConfigs {
+	for name, pconf := range c.PluginConfigs {
 		plugin := plugins.Get(name)
 		if plugin == nil {
-			return nil, fmt.Errorf("unknown plugin %s (did you register it first?)", name)
+			return fmt.Errorf("unknown plugin %s (did you register it first?)", name)
 		}
 		// FIXME I don't like this unmarshal/marshal game
 		pconfBytes, err := json.Marshal(pconf)
 		if err != nil {
-			return nil, fmt.Errorf("error marshalling config for plugin %s: %v", name, err)
+			return fmt.Errorf("error marshalling config for plugin %s: %v", name, err)
 		}
 		if err := plugin.Load(pconfBytes); err != nil {
-			return nil, err
+			return fmt.Errorf("failed to load plugin: %w", err)
 		}
-		config.Plugins = append(config.Plugins, plugin)
+		c.Plugins = append(c.Plugins, plugin)
 		log.Printf("Loaded plugin %s: %+v", name, pconf)
 	}
-	return &config, nil
+	return nil
 }
