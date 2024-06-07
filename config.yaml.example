@@ -1,11 +1,27 @@
 bot_name: your-bot-name
 cmdprefix: "."
+
 credentials:
   pagerduty_api_key: "your-pagerduty-api-key"
   slack_bot_token: "your-slack-bot-token",
   slack_app_level_token: "your-slack-app-level-token"
+
 plugins:
   oncall:
     default_schedule_id: "your-pagerduty-schedule-id"
+    handoff_reminders:
+      enabled: true
+      channel_id: "your-slack-channel-id"
+      # see mentions syntax at https://api.slack.com/reference/surfaces/formatting#special-mention .
+      # Note: the template uses Go's `text/template` package syntax.
+      template_path: "/path/to/reminder.template"
+      when:
+        - time: "6PM"
+          location: "Europe/Rome"
+        - time: "6PM"
+          location: "America/Los_Angeles"
+        - time: "6PM"
+          location: "Asia/Taipei"
+
 debug: false
 logfile: "/path/to/your-bot.log"

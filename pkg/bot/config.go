@@ -7,6 +7,7 @@ import (
 
 	"github.com/insomniacslk/slackbot/pkg/credentials"
 	"github.com/insomniacslk/slackbot/plugins"
+	"github.com/mitchellh/go-homedir"
 )
 
 // DefaultCmdPrefix is used when no command prefix is specified in the config
@@ -30,6 +31,13 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	// expand logfile
+	lf, err := homedir.Expand(c.LogFile)
+	if err != nil {
+		return fmt.Errorf("failed to expand log_file path: %w", err)
+	}
+	c.LogFile = lf
+
 	// if no command prefix is specified, use the default
 	if c.CmdPrefix == "" {
 		c.CmdPrefix = DefaultCmdPrefix

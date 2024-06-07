@@ -38,7 +38,7 @@ func (b *Bot) Start() error {
 		log.Lshortfile|log.LstdFlags,
 	)
 	if b.Config.LogFile != "" {
-		fd, err := os.OpenFile(b.Config.LogFile, os.O_RDWR|os.O_APPEND, 0644)
+		fd, err := os.OpenFile(b.Config.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			return fmt.Errorf("Failed to open log file `%s`: %v", b.Config.LogFile, err)
 		}
