@@ -88,30 +88,32 @@ func (g *Oncall) Load(configYAML []byte) error {
 		return fmt.Errorf("failed to expand template_path: %w", err)
 	}
 	conf.HandoffReminders.TemplatePath = f
-	// validate handoff reminder's template
-	tmpl, err := template.New(path.Base(conf.HandoffReminders.TemplatePath)).ParseFiles(conf.HandoffReminders.TemplatePath)
-	if err != nil {
-		return fmt.Errorf("failed to parse handoff_reminder template: %w", err)
-	}
-	reminders := make([]reminder, 0, len(conf.HandoffReminders.When))
-	// validate handoff reminder's times
-	// TODO identify and remove duplicates
-	for _, when := range conf.HandoffReminders.When {
-		loc, err := time.LoadLocation(when.Location)
+	// validate handoff reminder's template, only if reminders are enabled
+	reminders := make([]reminder, 0)
+	if conf.HandoffReminders.Enabled {
+		tmpl, err := template.New(path.Base(conf.HandoffReminders.TemplatePath)).ParseFiles(conf.HandoffReminders.TemplatePath)
 		if err != nil {
-			return fmt.Errorf("failed to load location %q: %w", when.Location, err)
+			return fmt.Errorf("failed to parse handoff_reminder template: %w", err)
 		}
-		h, err := hours.Parse(when.Time)
-		if err != nil {
-			return err
+		// validate handoff reminder's times
+		// TODO identify and remove duplicates
+		for _, when := range conf.HandoffReminders.When {
+			loc, err := time.LoadLocation(when.Location)
+			if err != nil {
+				return fmt.Errorf("failed to load location %q: %w", when.Location, err)
+			}
+			h, err := hours.Parse(when.Time)
+			if err != nil {
+				return err
+			}
+			r := reminder{
+				template: tmpl,
+				location: loc,
+				hour:     h.Hour,
+				minute:   h.Minute,
+			}
+			reminders = append(reminders, r)
 		}
-		r := reminder{
-			template: tmpl,
-			location: loc,
-			hour:     h.Hour,
-			minute:   h.Minute,
-		}
-		reminders = append(reminders, r)
 	}
 	if conf.HandoffReminders.Enabled {
 		if len(reminders) == 0 {
@@ -168,7 +170,7 @@ func (g *Oncall) runReminders(reminders []reminder, dest string) {
 			log.Printf("Error: failed to execute oncall reminder template: %v", err)
 		}
 		reminder, when, timer = updateTimer(reminders)
-		actions.Say(client, dest, out.String())
+		actions.Say(client, dest, "", out.String())
 	}
 }
 
@@ -241,7 +243,11 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 				}
 				idx++
 			}
-			actions.Say(client, ev.Channel, msg)
+			threadTS := ""
+			if ev.ThreadTimeStamp != "" {
+				threadTS = ev.ThreadTimeStamp
+			}
+			actions.Say(client, ev.Channel, threadTS, msg)
 		}
 	}
 	return nil
