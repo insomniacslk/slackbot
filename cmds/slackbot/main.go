@@ -6,6 +6,7 @@ import (
 
 	"github.com/insomniacslk/slackbot/pkg/bot"
 	_ "github.com/insomniacslk/slackbot/plugins/oncall"
+	_ "github.com/insomniacslk/slackbot/plugins/pinger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
