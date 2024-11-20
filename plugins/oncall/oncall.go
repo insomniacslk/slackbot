@@ -261,11 +261,11 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 				}
 				switch idx {
 				case 0:
-					msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				case 1:
-					msg += fmt.Sprintf(" Next: <%s|%s> (until %s)", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf(" Next: <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				default:
-					msg += fmt.Sprintf(", <%s|%s> (until %s)", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf("       <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				}
 				idx++
 			}
