@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"strings"
 	"text/template"
 	"time"
 
@@ -35,7 +36,8 @@ func init() {
 }
 
 type oncallConfig struct {
-	DefaultScheduleID string `yaml:"default_schedule_id"`
+	DefaultScheduleID string   `yaml:"default_schedule_id"`
+	Locations         []string `yaml:"locations"`
 	HandoffReminders  struct {
 		Enabled      bool   `yaml:"enabled"`
 		TemplatePath string `yaml:"template_path"`
@@ -189,9 +191,24 @@ func (g *Oncall) get(scheduleID string) ([]pagerduty.OnCall, error) {
 	return resp.OnCalls, nil
 }
 
+func timeInLocation(t time.Time, loc *time.Location) string {
+	return t.In(loc).Format("Jan 02 15:04 MST")
+}
+
 // HandleCmd is called when a .wea/.weather command is invoked.
 func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEvent, arg string) error {
 	var scheduleIDs []string
+	locations := make([]*time.Location, 0)
+	for _, locName := range g.Config.Locations {
+		loc, err := time.LoadLocation(locName)
+		if err != nil {
+			return fmt.Errorf("failed to load location %q: %w", locName, err)
+		}
+		locations = append(locations, loc)
+	}
+	if len(locations) == 0 {
+		locations = []*time.Location{time.UTC}
+	}
 	if arg == "" {
 		scheduleIDs = []string{g.Config.DefaultScheduleID}
 	} else {
@@ -233,13 +250,22 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 			}
 			idx := 0
 			for _, oncall := range oncalls {
+				timeFormat := "2006-01-02T15:04:05Z"
+				oncallEnd, err := time.Parse(timeFormat, oncall.End)
+				if err != nil {
+					return fmt.Errorf("failed to parse time %q with format %q: %w", oncall.End, timeFormat, err)
+				}
+				timeList := make([]string, 0, len(locations))
+				for _, loc := range locations {
+					timeList = append(timeList, timeInLocation(oncallEnd, loc))
+				}
 				switch idx {
 				case 0:
-					msg += fmt.Sprintf(": Current oncall: <%s|%s>.", oncall.User.HTMLURL, oncall.User.Summary)
+					msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				case 1:
-					msg += fmt.Sprintf(" Next: <%s|%s>", oncall.User.HTMLURL, oncall.User.Summary)
+					msg += fmt.Sprintf(" Next: <%s|%s> (until %s)", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				default:
-					msg += fmt.Sprintf(", <%s|%s>", oncall.User.HTMLURL, oncall.User.Summary)
+					msg += fmt.Sprintf(", <%s|%s> (until %s)", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				}
 				idx++
 			}
