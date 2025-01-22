@@ -97,8 +97,10 @@ func (b *Bot) Start() error {
 						} else {
 							arg = parts[1]
 						}
+						log.Printf("Received command %q with arg %q", cmd, arg)
 						for _, plugin := range b.Config.Plugins {
 							if plugin.Handles(cmd) {
+								log.Printf("Plugin %q handling command %q with arg %q", plugin.Name(), cmd, arg)
 								if err := plugin.HandleCmd(client, iev, strings.TrimSpace(arg)); err != nil {
 									b.Log.Printf("Error: plugin %s: %v", plugin.Name(), err)
 								}

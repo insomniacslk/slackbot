@@ -261,9 +261,15 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 				}
 				switch idx {
 				case 0:
-					msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					slackUser, err := client.GetUserByEmail(oncall.User.Email)
+					if err == nil {
+						msg += fmt.Sprintf(": Current oncall: <@%s> (until %s).\n", slackUser.ID, strings.Join(timeList, " | "))
+					} else {
+						log.Printf("Warning: no Slack user found for email %q", oncall.User.Email)
+						msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					}
 				case 1:
-					msg += fmt.Sprintf(" Next: <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf(" Next 24h: <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				default:
 					msg += fmt.Sprintf("       <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				}
