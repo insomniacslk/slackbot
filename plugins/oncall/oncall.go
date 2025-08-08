@@ -19,6 +19,7 @@ import (
 	"github.com/insomniacslk/hours"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
@@ -231,20 +232,27 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 	}
 	log.Printf("Getting oncalls for schedule IDs %v", scheduleIDs)
 	for _, scheduleID := range scheduleIDs {
-		oncalls, err := g.get(scheduleID)
+		oncallList, err := g.get(scheduleID)
 		if err != nil {
 			return err
 		}
 		oncallByRotation := make(map[string][]pagerduty.OnCall)
-		for _, oncall := range oncalls {
+		var prev *pagerduty.OnCall
+		for _, oncall := range oncallList {
+			if prev != nil && oncall.User.ID == prev.User.ID && oncall.Start == prev.Start && oncall.End == prev.End {
+				// duplicate?
+				continue
+			}
+			prev = &oncall
 			oncallByRotation[oncall.Schedule.Summary] = append(oncallByRotation[oncall.Schedule.Summary], oncall)
+			logrus.Infof("Appending oncall %s (%s -> %s)", oncall.User.Summary, oncall.Start, oncall.End)
 		}
 		for sched, oncalls := range oncallByRotation {
 			var msg string
 			if len(oncalls) > 0 {
 				// assume that the schedule URL is the same for all the other
 				// items, since they were grouped together by schedule name.
-				msg += fmt.Sprintf("*<%s|%s>*", oncalls[0].Schedule.HTMLURL, sched)
+				msg += fmt.Sprintf("*<%s|%s>*:\n", oncalls[0].Schedule.HTMLURL, sched)
 			} else {
 				msg += "*" + sched + "*"
 			}
@@ -263,15 +271,15 @@ func (g *Oncall) HandleCmd(client *socketmode.Client, ev *slackevents.MessageEve
 				case 0:
 					slackUser, err := client.GetUserByEmail(oncall.User.Email)
 					if err == nil {
-						msg += fmt.Sprintf(": Current oncall: <@%s> (until %s).\n", slackUser.ID, strings.Join(timeList, " | "))
+						msg += fmt.Sprintf("  Current oncall: <@%s> (until %s).\n", slackUser.ID, strings.Join(timeList, " | "))
 					} else {
 						log.Printf("Warning: no Slack user found for email %q", oncall.User.Email)
-						msg += fmt.Sprintf(": Current oncall: <%s|%s> (until %s).\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+						msg += fmt.Sprintf("  Current oncall: <%s|%s> (until %s).\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 					}
 				case 1:
-					msg += fmt.Sprintf(" Next 24h: <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf("  Next 24h:\n    * <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				default:
-					msg += fmt.Sprintf("       <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
+					msg += fmt.Sprintf("    * <%s|%s> (until %s)\n", oncall.User.HTMLURL, oncall.User.Summary, strings.Join(timeList, " | "))
 				}
 				idx++
 			}
